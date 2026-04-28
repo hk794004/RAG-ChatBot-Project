@@ -21,7 +21,7 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 # Streamlit page setup
 
 st.set_page_config(page_title="RAG Chatot", layout="wide")
-st.title("RAG Q&A With Multiples PDF Pages + Chat History")
+st.title("RAG ChatBot Agent Q&A With Multiples PDF Pages + Chat History")
 st.caption("Build With Streamlit + GROQ API Cloud + HuggingFace + LLM")
 
 # Sidebar
@@ -34,7 +34,8 @@ with st.sidebar:
         "GROQ API KEY",
         type="password",
     )
-    API_KEY = API_Inpt if API_Inpt else GROQ_API_KEY
+
+API_KEY = API_Inpt if API_Inpt else GROQ_API_KEY
 
 if not API_KEY:
     st.warning("API KEY Missing Please Insert API KEY into Sidebar")
@@ -167,6 +168,7 @@ def get_history(session_id):
     return chat_history[session_id]
 
 Session_ID = st.text_input("👤 Session_ID", value='default')
+
 User_Q = st.chat_input("💬 Ask a Question...")
 
 # Session State For Chat History Here
@@ -206,6 +208,7 @@ if User_Q:
         input=User_Q,
         context=context_str
     )
+    
     answer = LLM.invoke(qa_msgs).content
 
     st.chat_message("user").write(User_Q)

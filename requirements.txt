@@ -4,6 +4,7 @@ python-dotenv
 langchain-core
 langchain-groq
 langchain-community
+langchain-huggingface
 langchain-text-splitters
 langchain-chroma
 chromadb
@@ -11,8 +12,7 @@ pypdf
 sentence-transformers
 transformers
 tokenizers
-torch
-torchvision==0.16.0+cpu
-torchaudio==0.16.0+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
 requests
+torch
+torchvision
+torchaudio

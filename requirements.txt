@@ -1,4 +1,3 @@
-pandas
 numpy
 streamlit
 python-dotenv
@@ -13,5 +12,4 @@ sentence-transformers
 transformers
 tokenizers
 torch
-accelerate
 requests

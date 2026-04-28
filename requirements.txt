@@ -11,5 +11,5 @@ pypdf
 sentence-transformers
 transformers
 tokenizers
-torch==2.1.0+cpu
+torch
 requests

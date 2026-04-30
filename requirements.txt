@@ -4,7 +4,6 @@ python-dotenv
 langchain-core
 langchain-groq
 langchain-community
-langchain-huggingface
 langchain-text-splitters
 langchain-chroma
 chromadb
@@ -12,7 +11,5 @@ pypdf
 sentence-transformers
 transformers
 tokenizers
+accelerate
 requests
-torch
-torchvision
-torchaudio

@@ -18,7 +18,7 @@ from langchain_chroma import Chroma
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
 # Streamlit Page Setup_______________________________________________
 
@@ -56,7 +56,7 @@ LLM = ChatGroq(
     api_key=Key,
 )
 
-# Create File Uploader___________________________
+# Create File Uploader__________________________________
 
 file_uploader = st.file_uploader(
     "Upload PDFs",
@@ -64,7 +64,7 @@ file_uploader = st.file_uploader(
      accept_multiple_files=True,
 )
 
-# Upload PDFs___________________________
+# Upload PDFs___________________________________________
 
 if not file_uploader:
     st.warning("⚠️ Warning Please Upload PDFs Document")
@@ -113,7 +113,7 @@ INDEX_IDR = "chroma_index"
 vectorstore = Chroma.from_documents(
         Split,
         Embeddings,
-        persist_directory=INDEX_IDR,
+        persist_directory=None,
     )
 
 retriever = vectorstore.as_retriever(
@@ -123,7 +123,7 @@ retriever = vectorstore.as_retriever(
 
 st.sidebar.write(f"🔍 Indexed {len(Split)} chunks for retriveal")
 
-# Helper : format docs for stuffing ______________________
+# Helper : format docs for stuffing ________________________
 
 def _join_docs(docs, max_chars=7000):
     chunk, total = [], 0
@@ -136,7 +136,7 @@ def _join_docs(docs, max_chars=7000):
         total += len(piece)
     return "\n\n---\n\n".join(chunk)
 
-# Prompt_______________________
+# Prompt___________________________________________________
 
 contextualize_q_prompt = ChatPromptTemplate.from_messages([
 
@@ -173,17 +173,17 @@ def get_history(session_id):
         chat_hist[session_id] = ChatMessageHistory()
     return chat_hist[session_id]
     
-# Chat UI Input ___________________________________
+# Chat UI Input __________________________________________________________
 
 session_id = st.text_input("🆔 Session_ID", value="default")
 user_q = st.chat_input("💬 Ask a Question ...")
 
-# Session_State for chat history here_____________________________
+# Session_State for chat history here_____________________________________
 
 if user_q:
     history = get_history(session_id)
 
-# Rewrite Question with history_________________________
+# Rewrite Question with history___________________________________________
 
     rewrite_msgs = contextualize_q_prompt.format_messages(
         chat_history=history.messages,
@@ -192,7 +192,7 @@ if user_q:
 
     standalone_q = LLM.invoke(rewrite_msgs).content.strip()
 
-    # Retrieve Chunks_____________________________
+    # Retrieve Chunks_____________________________________________________
 
     docs = retriever.invoke(standalone_q)
 
@@ -204,7 +204,7 @@ if user_q:
         history.add_ai_message(answer)
         st.stop()
 
-    # Build Context Strings___________________________
+    # Build Context Strings________________________________________________
 
     context_str = _join_docs(docs)
 
@@ -235,3 +235,5 @@ if user_q:
         for i, doc in enumerate(docs, 1):
             st.markdown(f"** {i}. {doc.metadata.get('source_file','Unknown')} (p {doc.metadata.get('page','?')}) **")
             st.write(doc.page_content[:500] + ("..." if len(doc.page_content) > 500 else ""))
+
+

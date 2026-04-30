@@ -1,4 +1,3 @@
-numpy
 streamlit
 python-dotenv
 langchain-core
@@ -6,10 +5,7 @@ langchain-groq
 langchain-community
 langchain-text-splitters
 langchain-chroma
-chromadb
+chromadb==0.4.24
 pypdf
 sentence-transformers
-transformers
-tokenizers
-accelerate
 requests

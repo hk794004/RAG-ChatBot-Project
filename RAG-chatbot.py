@@ -16,9 +16,7 @@ from langchain_chroma import Chroma
 
 # Load API_______________________________________________
 
-load_dotenv()
-
-GROQ_API_KEY = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Streamlit Page Setup_______________________________________________
 
@@ -37,7 +35,7 @@ with st.sidebar:
         type="password",
     )
 
-Key = api_input if api_input else GROQ_API_KEY
+Key = api_input or GROQ_API_KEY
 
 if not Key:
     st.error("API KEY Missing")
@@ -97,23 +95,23 @@ for clean in tmp_path:
     except Exception as e:
         pass
 
-# Chunking Split Text
+# Chunking Split Text___________________________________________________________________
 
 text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 2000,
-        chunk_overlap = 120,
+        chunk_size = 1200,
+        chunk_overlap = 100,
     )
 
 Split = text_splitter.split_documents(all_docs)
 
-# VectorStore
+# VectorStore_____________________________________________________________________________
 
 INDEX_IDR = "chroma_index"
 
 vectorstore = Chroma.from_documents(
         Split,
         Embeddings,
-        persist_directory=None,
+        persist_directory = INDEX_IDR,
     )
 
 retriever = vectorstore.as_retriever(
@@ -236,4 +234,4 @@ if user_q:
             st.markdown(f"** {i}. {doc.metadata.get('source_file','Unknown')} (p {doc.metadata.get('page','?')}) **")
             st.write(doc.page_content[:500] + ("..." if len(doc.page_content) > 500 else ""))
 
-
+##########################################################################################################

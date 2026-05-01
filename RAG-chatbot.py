@@ -107,11 +107,14 @@ Split = text_splitter.split_documents(all_docs)
 
 INDEX_IDR = "chroma_index"
 
-vectorstore = Chroma.from_documents(
+if "vectorstore" not in st.session_state:
+    st.session_state.vectorstore = Chroma.from_documents(
         Split,
         Embeddings,
-        persist_directory = INDEX_IDR,
+        persist_directory=INDEX_IDR,
     )
+
+vectorstore = st.session_state.vectorstore
 
 retriever = vectorstore.as_retriever(
         search_type="mmr",

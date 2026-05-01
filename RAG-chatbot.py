@@ -2,7 +2,6 @@
 
 import os
 import streamlit as st
-import dotenv 
 import tempfile
 
 from dotenv import load_dotenv

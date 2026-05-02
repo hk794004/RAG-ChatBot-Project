@@ -12,7 +12,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.document_loaders import PyPDFLoader 
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
-from langchain_community.embeddings import HuggingFaceEmbeddings 
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma 
 
 # Load API_______________________________________________
@@ -108,8 +108,6 @@ text_splitter = RecursiveCharacterTextSplitter(
 Split = text_splitter.split_documents(all_docs)
 
 # VectorStore_____________________________________________________________________________
-
-INDEX_IDR = "chroma_index"
 
 vectorstore = Chroma.from_documents(
         Split,

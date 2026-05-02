@@ -4,7 +4,6 @@ import os
 import streamlit as st
 import dotenv 
 import tempfile
-import chromadb
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -12,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.document_loaders import PyPDFLoader 
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings 
 from langchain_chroma import Chroma 
 
 # Load API_______________________________________________
@@ -94,7 +93,7 @@ st.success(f"Loaded {len(all_docs)} pages from {len(file_uploader)} PDFs")
 
 for clean in tmp_path:
     try:
-        os.remove(clean)
+        os.unlink(clean)
     except Exception as e:
         pass
 
@@ -112,7 +111,6 @@ Split = text_splitter.split_documents(all_docs)
 vectorstore = Chroma.from_documents(
         Split,
         embeddings,
-        client=chromadb.Client(),
     )
 
 retriever = vectorstore.as_retriever(

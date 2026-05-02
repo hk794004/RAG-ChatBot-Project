@@ -10,3 +10,5 @@ pypdf
 sentence-transformers
 transformers
 requests
+torch
+accelarate

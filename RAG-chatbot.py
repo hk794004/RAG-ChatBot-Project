@@ -2,7 +2,9 @@
 
 import os
 import streamlit as st
+import dotenv 
 import tempfile
+import chromadb
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -14,6 +16,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_chroma import Chroma 
 
 # Load API_______________________________________________
+
+load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -34,7 +38,7 @@ with st.sidebar:
         type="password",
     )
 
-Key = api_input or GROQ_API_KEY
+Key = api_input if api_input else GROQ_API_KEY
 
 if not Key:
     st.error("API KEY Missing")
@@ -43,7 +47,7 @@ if not Key:
 
 # Create Embeddings___________________________
 
-Embeddings = HuggingFaceEmbeddings(
+embeddings = HuggingFaceEmbeddings(
     model_name = "sentence-transformers/all-MiniLM-L6-v2",
     encode_kwargs = {"normalize_embeddings" : True},
     )
@@ -71,13 +75,13 @@ all_docs = []
 tmp_path = []
 
 for csv in file_uploader:
-    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    temp.write(csv.getvalue())
-    temp.close()
-    tmp_path.append(temp.name)
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") # Temporary disk pe path bana ra he delete= False matlb disk pe permanent pdf file save krra he 
+    temp.write(csv.getvalue()) # pdf file k text ko parh ra he likh ra he disk k andr
+    temp.close() # ab close kr raha he 
+    tmp_path.append(temp.name) # tmp_path k andr temporary file banayi he disk pe ush ko tmp_path k andr dalra he 
 
-    loader = PyPDFLoader(temp.name)
-    Docs = loader.load()
+    loader = PyPDFLoader(temp.name) # disk pe jo pdf file bani he temporary path folder bana he ush ka address dera he pypdfloader ko 
+    Docs = loader.load() # pdf k file ko read krra he text ko jo andr text mojood he
 
     for d in Docs:
         d.metadata["source_file"] = csv.name
@@ -90,7 +94,7 @@ st.success(f"Loaded {len(all_docs)} pages from {len(file_uploader)} PDFs")
 
 for clean in tmp_path:
     try:
-        os.unlink(clean)
+        os.remove(clean)
     except Exception as e:
         pass
 
@@ -107,14 +111,11 @@ Split = text_splitter.split_documents(all_docs)
 
 INDEX_IDR = "chroma_index"
 
-if "vectorstore" not in st.session_state:
-    st.session_state.vectorstore = Chroma.from_documents(
+vectorstore = Chroma.from_documents(
         Split,
-        Embeddings,
-        persist_directory=INDEX_IDR,
+        embeddings,
+        client=chromadb.Client(),
     )
-
-vectorstore = st.session_state.vectorstore
 
 retriever = vectorstore.as_retriever(
         search_type="mmr",

@@ -5,10 +5,13 @@ langchain-groq
 langchain-community
 langchain-text-splitters
 langchain-chroma
-chromadb
+chromadb==0.4.24
 pypdf
 sentence-transformers
 transformers
 requests
 torch
 torchvision
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-grpc

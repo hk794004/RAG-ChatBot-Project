@@ -12,7 +12,7 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma 
+from langchain_community.vectorstores import FAISS
 
 # Load API_______________________________________________
 
@@ -126,14 +126,14 @@ Split = text.split_documents(all_docs)
 # VectorStore_____________________________________________________________________________
 
 if "vectorstore" not in st.session_state:
-    st.session_state["vectorstore"] = vectorstore = Chroma.from_documents(
+    st.session_state["vectorstore"] = vectorstore = FAISS.from_documents(
         Split,
         get_embeddings(),
     )
 
 retriever = st.session_state.vectorstore.as_retriever(
         search_type="mmr",
-        search_kwargs={"k" : 5, "fetch_k" : 20}
+        search_kwargs={"k": 5}
     )
 
 st.sidebar.write(f"🔍 Indexed {len(Split)} chunks for retriveal")
@@ -280,5 +280,5 @@ button = st.sidebar.button("Clear Chat")
 if button:
     st.session_state.pop("chat_history", None)
     st.rerun()
-    
+
 ##########################################################################################################

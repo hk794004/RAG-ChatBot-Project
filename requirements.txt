@@ -4,6 +4,7 @@ langchain-core
 langchain-groq
 langchain-community
 langchain-text-splitters
+langchain-huggingface
 langchain-chroma
 chromadb==0.4.24
 pypdf

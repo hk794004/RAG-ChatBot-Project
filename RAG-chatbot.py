@@ -125,11 +125,19 @@ Split = text.split_documents(all_docs)
 
 # VectorStore_____________________________________________________________________________
 
-if "vectorstore" not in st.session_state:
-    st.session_state["vectorstore"] = vectorstore = FAISS.from_documents(
+current_files = sorted([f.name for f in file_uploader])
+
+if (
+    "vectorstore" not in st.session_state or
+    st.session_state.get("loaded_files") != current_files
+):
+    st.session_state["vectorstore"] = FAISS.from_documents(
         Split,
         get_embeddings(),
     )
+    st.session_state["loaded_files"] = current_files
+    st.session_state.pop("chat_history", None)
+
 
 retriever = st.session_state.vectorstore.as_retriever(
         search_type="mmr",

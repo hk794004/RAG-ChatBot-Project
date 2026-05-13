@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_community.document_loaders import Docx2txtLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -71,7 +71,7 @@ def Get_LLM():
 
 file_uploader = st.sidebar.file_uploader(
     "Upload Word Doc",
-    type="docx",
+    type="pdf",
      accept_multiple_files=True,
 )
 
@@ -85,12 +85,12 @@ all_docs = []
 tmp_path = []
 
 for csv in file_uploader:
-    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".docx") 
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") 
     temp.write(csv.getvalue())
     temp.close() 
     tmp_path.append(temp.name) 
 
-    loader = Docx2txtLoader(temp.name) 
+    loader = PyPDFLoader(temp.name) 
     Docs = loader.load() 
 
     for d in Docs:
@@ -261,7 +261,7 @@ if User_Input:
         st.stop()
 
     # Build Context
-    
+
     context_str = _join_docs(docs)
 
     # Final Answer

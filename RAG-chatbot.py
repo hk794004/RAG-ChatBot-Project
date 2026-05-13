@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -40,7 +40,7 @@ with st.sidebar:
 Key = api_input if api_input else GROQ_API_KEY
 
 if not Key:
-    st.error("API KEY Missing")
+    st.error("API KEY is missing")
     st.stop()
 else:
     st.sidebar.success("Api Key Loaded")
@@ -61,16 +61,17 @@ def get_embeddings():
 def Get_LLM():
     
     LLM = ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b",
     api_key=Key,
+    streaming=False
     )
     return LLM
 
 # Create File Uploader__________________________________
 
 file_uploader = st.sidebar.file_uploader(
-    "Upload PDF file",
-    type="pdf",
+    "Upload Word Doc",
+    type="docx",
      accept_multiple_files=True,
 )
 
@@ -84,12 +85,12 @@ all_docs = []
 tmp_path = []
 
 for csv in file_uploader:
-    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") 
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".docx") 
     temp.write(csv.getvalue())
     temp.close() 
     tmp_path.append(temp.name) 
 
-    loader = PyPDFLoader(temp.name) 
+    loader = Docx2txtLoader(temp.name) 
     Docs = loader.load() 
 
     for d in Docs:
@@ -97,7 +98,7 @@ for csv in file_uploader:
 
     all_docs.extend(Docs)
 
-st.sidebar.success(f"Loaded {len(all_docs)} pages from {len(file_uploader)} PDF")
+st.sidebar.success(f"Loaded {len(all_docs)} pages from {len(file_uploader)} Word Document")
 
 # Clean Path___________________________________________________________________________________________
 
@@ -180,31 +181,26 @@ contextualize_q_prompt = ChatPromptTemplate.from_messages([
 
 qa_prompt = ChatPromptTemplate.from_messages([
     ("system",
-     "You are an expert AI assistant specialized in analyzing and answering questions from PDF documents.\n\n"
+     "You are an expert AI assistant specialized in analyzing documents.\n\n"
 
      "Your role:\n"
-     "- Carefully read the provided context from the document\n"
-     "- Answer ONLY using the given context\n"
+     "- Answer ONLY using the given context from the document\n"
      "- Do NOT use outside knowledge\n"
-     "- If the answer is not in the context, say: 'Answer is not available in the provided document'\n\n"
+     "- If the answer is NOT in the context, do NOT say 'not available'\n"
+     "  Instead: Suggest 2-3 related topics or stories that ARE present in the document\n"
+     "  Format:\n"
+     "  'This topic is not in the document, but here are related things I found:\n"
+     "   • [suggestion 1]\n"
+     "   • [suggestion 2]'\n\n"
 
-     "Guidelines:\n"
-     "- Be accurate and factual\n"
-     "- Be concise but informative\n"
-     "- If needed, break the answer into structured points\n"
-     "- Do not hallucinate or guess information\n\n"
-
-     "Output format:\n"
-     "1. Direct Answer\n"
-     "2. Explanation (based on context)\n"
-     "3. Key Points (if applicable)"
+     "- Never hallucinate\n"
+     "- Always stay within document content only"
     ),
 
     ("human",
      "Context from document:\n{context}\n\n"
      "Question:\n{input}")
 ])
-
 
 # Session State for chat history (multi sessions)_________________________
 
@@ -221,72 +217,78 @@ def get_history(session_id):
 # Chat UI Input __________________________________________________________
 
 session_id = st.text_input("🆔 Session_ID", value="default")
-user_q = st.chat_input("💬 Ask a Question ...")
 
-# Session_State for chat history here_____________________________________
+# ✅ Pehle poori history dikhao — har rerun pe
+history = get_history(session_id)
 
-if user_q:
-    history = get_history(session_id)
+for msg in history.messages:
+    role = getattr(msg, "type", "")
 
-# Rewrite Question with history___________________________________________
+    if role == "human":
+        st.chat_message("human").write(msg.content)
+    else:
+        st.chat_message("ai").write(msg.content)
+
+User_Input = st.chat_input("💬 Ask a Question ...")
+
+if User_Input:
+
+    st.chat_message("human").write(User_Input)
+
+
+    # Rewrite Question with history
 
     rewrite_msgs = contextualize_q_prompt.format_messages(
-        chat_history=history.messages,
-        input=user_q,
-        )
+        chat_history=history.messages, 
+        input=User_Input,
+    )
 
     LLM = Get_LLM()
 
     standalone_q = LLM.invoke(rewrite_msgs).content.strip()
 
-    # Retrieve Chunks_____________________________________________________
+    # Retrieve Chunks
 
     docs = retriever.invoke(standalone_q)
 
+
     if not docs:
         answer = "Out of Scope -- not found in provided documents."
-        st.chat_message("user").write(user_q)
-        st.chat_message("assistant").write(answer)
-        history.add_user_message(user_q)
+        with st.chat_message("assistant"):
+            st.write(answer)
+        history.add_user_message(User_Input)
         history.add_ai_message(answer)
         st.stop()
 
-    # Build Context Strings________________________________________________
-
+    # Build Context
+    
     context_str = _join_docs(docs)
 
-    # Asking final Question with stuffed context___________________________
+    # Final Answer
 
     qa_msgs = qa_prompt.format_messages(
-        chat_history=history.messages,
-        input=user_q,
+        input=User_Input,
         context=context_str,
-        )
+    )
 
     answer = LLM.invoke(qa_msgs).content
 
-    st.chat_message("user").write(user_q)
-    st.chat_message("assistant").write(answer)
+    with st.chat_message("assistant"):
+        st.markdown(answer)
 
-    history.add_user_message(user_q)
+    history.add_user_message(User_Input)
     history.add_ai_message(answer)
 
-    # Debug Panels_______________________________________
+    # Debug Panels
 
     with st.expander("🔍 Debug : Rewritten Query & Retrieval"):
-        st.write("** Rewritten (standalone) query : **")
+
+        st.write("**Rewritten (standalone) query:**")
         st.code(standalone_q or "(empty)", language="text")
         st.write(f"**Retrieved {len(docs)} chunk(s).**")
 
     with st.expander("📄 Retrieved Chunks"):
+
         for i, doc in enumerate(docs, 1):
-            st.markdown(f"** {i}. {doc.metadata.get('source_file','Unknown')} (p {doc.metadata.get('page','?')}) **")
+            st.markdown(f"**{i}. {doc.metadata.get('source_file','Unknown')} (p {doc.metadata.get('page','?')})**")
             st.write(doc.page_content[:500] + ("..." if len(doc.page_content) > 500 else ""))
-
-button = st.sidebar.button("Clear Chat")
-
-if button:
-    st.session_state.pop("chat_history", None)
-    st.rerun()
-
-##########################################################################################################
